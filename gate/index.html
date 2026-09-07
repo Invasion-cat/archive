@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<!-- The Operator is still listening. Prove that you were, too. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>STATION NULL // GATE</title>
+  <style>
+    :root{
+      --phosphor: #37ff6c;
+      --phosphor-dim: #1f9c45;
+      --danger: #ff5a5a;
+      --tube: #061006;
+    }
+
+    *{ margin:0; padding:0; box-sizing:border-box; }
+    html, body{ height:100%; }
+
+    body{
+      background:#000;
+      color:var(--phosphor);
+      font-family: ui-monospace, "Cascadia Mono", "SF Mono", "Consolas", "Courier New", monospace;
+      overflow:hidden;
+      min-height:100vh;
+    }
+
+    /* ---- The tube ---- */
+    .crt{
+      position:relative;
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:radial-gradient(ellipse at center, #0b1a0b 0%, var(--tube) 62%, #000 100%);
+      box-shadow: inset 0 0 160px 40px rgba(0,0,0,0.9),
+                  inset 0 0 90px 10px rgba(55,255,108,0.06);
+      transform-origin: center;
+      animation: power-on 1.15s ease-out both;
+    }
+    .crt::after{
+      content:"";
+      position:absolute; inset:0;
+      z-index:6; pointer-events:none;
+      background:radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.55) 100%);
+    }
+
+    /* ---- Content ---- */
+    .screen{
+      position:relative;
+      z-index:2;
+      width:min(680px, 88vw);
+      padding:2rem;
+      animation: text-in 1.9s steps(1) both;
+    }
+    .line{
+      font-size:clamp(1rem, 2.6vw, 1.45rem);
+      line-height:1.85;
+      letter-spacing:0.05em;
+      text-shadow: 0 0 4px rgba(55,255,108,0.75),
+                   0 0 12px rgba(55,255,108,0.45),
+                   0 0 26px rgba(55,255,108,0.18);
+    }
+    .carrier{
+      color:#c9ffd8;
+      text-shadow: 1px 0 2px rgba(255,60,60,0.35),
+                  -1px 0 2px rgba(60,120,255,0.35),
+                   0 0 6px rgba(55,255,108,0.9),
+                   0 0 18px rgba(55,255,108,0.5);
+      margin-bottom:1.1rem;
+    }
+
+    /* ---- Prompt ---- */
+    .prompt{
+      margin-top:1.8rem;
+      display:flex;
+      align-items:center;
+      gap:0.6rem;
+      border-bottom:1px solid rgba(55,255,108,0.5);
+      padding-bottom:0.4rem;
+    }
+    .caret{ color:var(--phosphor); font-size:1.3rem; }
+    #word{
+      flex:1;
+      appearance:none;
+      background:transparent;
+      border:none;
+      outline:none;
+      color:var(--phosphor);
+      font:inherit;
+      font-size:clamp(1rem, 2.6vw, 1.35rem);
+      letter-spacing:0.12em;
+      text-transform:lowercase;
+      caret-color:var(--phosphor);
+      text-shadow:0 0 6px rgba(55,255,108,0.6);
+    }
+    #word::placeholder{ color:rgba(55,255,108,0.35); }
+
+    .btn{
+      appearance:none;
+      font:inherit;
+      cursor:pointer;
+      color:var(--phosphor);
+      background:rgba(55,255,108,0.05);
+      border:1px solid var(--phosphor);
+      padding:0.55rem 1rem;
+      letter-spacing:0.08em;
+      text-shadow:0 0 6px rgba(55,255,108,0.6);
+      transition:background 0.15s ease, box-shadow 0.15s ease;
+    }
+    .btn:hover{ background:rgba(55,255,108,0.16); box-shadow:0 0 14px rgba(55,255,108,0.35); }
+    .btn:focus-visible{ outline:2px solid #c9ffd8; outline-offset:2px; }
+
+    /* ---- Result ---- */
+    .result{ margin-top:1.6rem; min-height:1.5rem; }
+    .result .ok{ color:#c9ffd8; }
+    .result .bad{ color:var(--danger); text-shadow:0 0 8px rgba(255,90,90,0.5); }
+    .next{
+      display:inline-block;
+      margin-top:1.1rem;
+      color:#c9ffd8;
+      text-decoration:none;
+      border-bottom:1px solid #c9ffd8;
+      padding-bottom:2px;
+      letter-spacing:0.1em;
+      text-shadow:0 0 8px rgba(55,255,108,0.8), 0 0 18px rgba(55,255,108,0.4);
+    }
+    .next:hover{ background:rgba(55,255,108,0.12); }
+    .hidden{ display:none; }
+    .shake{ animation:shake 0.32s linear; }
+
+    /* ---- Overlays ---- */
+    .scanlines{
+      position:absolute; inset:0;
+      z-index:4; pointer-events:none;
+      background:repeating-linear-gradient(
+        to bottom,
+        rgba(0,0,0,0)   0px,
+        rgba(0,0,0,0)   2px,
+        rgba(0,0,0,0.30) 3px,
+        rgba(0,0,0,0.30) 4px
+      );
+    }
+    .scanlines::before{
+      content:"";
+      position:absolute; left:0; right:0;
+      height:26vh; top:-30vh;
+      background:linear-gradient(to bottom,
+        rgba(55,255,108,0)    0%,
+        rgba(55,255,108,0.05) 50%,
+        rgba(55,255,108,0)    100%);
+      animation: roll 8s linear infinite;
+    }
+    .flicker{
+      position:absolute; inset:0;
+      z-index:5; pointer-events:none;
+      background:rgba(10,20,10,0.10);
+      opacity:0;
+      animation: flicker 0.12s infinite steps(1);
+    }
+
+    /* ---- Keyframes ---- */
+    @keyframes power-on{
+      0%   { opacity:0; transform:scaleY(0.006) scaleX(1.35); filter:brightness(4) blur(1px); }
+      14%  { opacity:1; transform:scaleY(0.006) scaleX(1);     filter:brightness(4); }
+      34%  { transform:scaleY(1) scaleX(1);                     filter:brightness(2.2); }
+      55%  { filter:brightness(0.65); }
+      72%  { filter:brightness(1.35); }
+      100% { filter:brightness(1); }
+    }
+    @keyframes text-in{
+      0%, 46% { opacity:0; }
+      47%     { opacity:0.35; }
+      49%     { opacity:0.08; }
+      53%     { opacity:0.9; }
+      61%     { opacity:0.4; }
+      100%    { opacity:1; }
+    }
+    @keyframes roll{ 0%{ top:-30vh; } 100%{ top:100%; } }
+    @keyframes flicker{
+      0%{opacity:0.10;} 20%{opacity:0.02;} 40%{opacity:0.14;}
+      60%{opacity:0.04;} 80%{opacity:0.09;} 100%{opacity:0.03;}
+    }
+    @keyframes shake{
+      0%,100%{ transform:translateX(0); }
+      25%{ transform:translateX(-6px); }
+      75%{ transform:translateX(6px); }
+    }
+
+    @media (prefers-reduced-motion: reduce){
+      .crt, .screen{ animation:none; }
+      .scanlines::before, .flicker{ animation:none; opacity:0; }
+      .shake{ animation:none; }
+    }
+  </style>
+</head>
+<body>
+  <main class="crt">
+    <div class="screen">
+      <p class="line carrier">THE GATE</p>
+      <p class="line">One word remains. Speak it, and the gate opens.</p>
+
+      <div class="prompt" id="prompt">
+        <span class="caret" aria-hidden="true">&gt;</span>
+        <input id="word" type="text" autocomplete="off" autocapitalize="none"
+               spellcheck="false" aria-label="Enter the final word"
+               placeholder="enter the word" autofocus>
+        <button class="btn" id="go">TRANSMIT</button>
+      </div>
+
+      <div class="result" id="result" aria-live="polite"></div>
+    </div>
+
+    <div class="scanlines" aria-hidden="true"></div>
+    <div class="flicker" aria-hidden="true"></div>
+  </main>
+
+  <script>
+    (function () {
+      // The reward link is NOT stored in plaintext. It is XOR-encrypted with the
+      // answer word as the key; only the correct word decrypts it to a real URL.
+      var BLOB = "Gx0YFR1ZSlwOBREGFgddCgMIQSoLBQgfDAENSBAIGEopAhEW";
+
+      var input = document.getElementById('word');
+      var go = document.getElementById('go');
+      var prompt = document.getElementById('prompt');
+      var result = document.getElementById('result');
+      if (!input || !go || !prompt || !result) return;
+
+      function decrypt(word) {
+        try {
+          var raw = atob(BLOB);
+          var out = '';
+          for (var i = 0; i < raw.length; i++) {
+            out += String.fromCharCode(raw.charCodeAt(i) ^ word.charCodeAt(i % word.length));
+          }
+          return out;
+        } catch (e) { return ''; }
+      }
+
+      function fail() {
+        result.innerHTML = '<span class="bad">WORD REJECTED. The gate holds.</span>';
+        prompt.classList.remove('shake');
+        void prompt.offsetWidth;          // restart the animation
+        prompt.classList.add('shake');
+        input.select();
+      }
+
+      function succeed(url) {
+        prompt.classList.add('hidden');
+        result.innerHTML =
+          '<span class="ok">GATE OPEN. The Operator kept a door for you.</span>' +
+          '<br><a class="next" href="' + url + '" target="_blank" rel="noopener noreferrer">ENTER THE NEXT PHASE &rarr;</a>';
+        var link = result.querySelector('.next');
+        if (link) link.focus();
+      }
+
+      function submit() {
+        var word = input.value.trim().toLowerCase();
+        if (!word) { fail(); return; }
+        var url = decrypt(word);
+        if (url.indexOf('https://github.com/') === 0) { succeed(url); }
+        else { fail(); }
+      }
+
+      go.addEventListener('click', submit);
+      input.addEventListener('keydown', function (e) {
+        if (e.key === 'Enter') { e.preventDefault(); submit(); }
+      });
+    })();
+  </script>
+</body>
+</html>
